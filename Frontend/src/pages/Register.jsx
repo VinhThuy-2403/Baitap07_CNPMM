@@ -81,7 +81,7 @@ export default function Register() {
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
               Họ và tên
             </label>
             <input
@@ -97,7 +97,7 @@ export default function Register() {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
               Email
             </label>
             <input
@@ -113,7 +113,7 @@ export default function Register() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
               Mật khẩu
             </label>
             <div className="relative">
@@ -138,7 +138,7 @@ export default function Register() {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
               Xác nhận mật khẩu
             </label>
             <div className="relative">

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../redux/authSlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, ShieldCheck } from "lucide-react";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
@@ -9,7 +9,7 @@ import Button from "../components/Button";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isLoading, error } = useSelector((state) => state.auth);
@@ -17,12 +17,12 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const resultAction = await dispatch(loginUser({ email, password }));
-    
+
     if (loginUser.fulfilled.match(resultAction)) {
       if (resultAction.payload && resultAction.payload.redirectUrl) {
         navigate(resultAction.payload.redirectUrl);
       } else {
-        navigate("/"); 
+        navigate("/edit-profile");
       }
     }
   };
@@ -50,7 +50,6 @@ const Login = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10 text-left">
         <div className="bg-white/80 backdrop-blur-xl py-8 px-4 shadow-2xl sm:rounded-3xl sm:px-10 border border-white/20">
-          
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm text-center font-medium animate-pulse">
               {error}
@@ -88,15 +87,21 @@ const Login = () => {
                   type="checkbox"
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                <label
+                  htmlFor="remember-me"
+                  className="ml-2 block text-sm text-gray-900"
+                >
                   Ghi nhớ đăng nhập
                 </label>
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+                <Link
+                  to="/forgot-password"
+                  className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
+                >
                   Quên mật khẩu?
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -106,28 +111,35 @@ const Login = () => {
               </Button>
             </div>
           </form>
-          
+
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500 rounded-full">Hoặc</span>
+                <span className="px-2 bg-white text-gray-500 rounded-full">
+                  Hoặc
+                </span>
               </div>
             </div>
 
             <div className="mt-6 text-center text-sm">
               <span className="text-gray-600">Chưa có tài khoản? </span>
-              <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+              <Link
+                to="/register"
+                className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
+              >
                 Đăng ký ngay
-              </a>
+              </Link>
             </div>
           </div>
         </div>
       </div>
-      
-      <style dangerouslySetInnerHTML={{__html: `
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @keyframes blob {
           0% { transform: translate(0px, 0px) scale(1); }
           33% { transform: translate(30px, -50px) scale(1.1); }
@@ -143,7 +155,9 @@ const Login = () => {
         .animation-delay-4000 {
           animation-delay: 4s;
         }
-      `}} />
+      `,
+        }}
+      />
     </div>
   );
 };
