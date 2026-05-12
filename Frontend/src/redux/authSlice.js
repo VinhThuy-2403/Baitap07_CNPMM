@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import authService from "../services/authService";
+import { loginAPI } from "../services/authService";
 
 // Action đăng nhập
 export const loginUser = createAsyncThunk(
   "auth/login",
   async (userData, thunkAPI) => {
     try {
-      const data = await authService.login(userData);
+      const data = await loginAPI(userData);
       localStorage.setItem("token", data.data.token); // Lưu token
       return data.data; // Trả về { token, role, redirectUrl }
     } catch (error) {
