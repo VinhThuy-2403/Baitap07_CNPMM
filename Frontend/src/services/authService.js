@@ -61,3 +61,9 @@ export const getRelatedProductsAPI = async (id) => {
   const response = await api.get(`/products/${id}/related`);
   return response.data;
 };
+
+export const searchProductsAPI = async (params) => {
+  const query = new URLSearchParams(params).toString();
+  const response = await api.get(`/products/search?${query}`);
+  return response.data;
+};

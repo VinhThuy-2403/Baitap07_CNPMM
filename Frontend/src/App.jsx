@@ -7,6 +7,7 @@ import ResetPassword from "./pages/ResetPassword";
 import EditProfile from "./pages/EditProfile";
 import Home from "./pages/Home";
 import ProductDetail from "./pages/ProductDetail";
+import SearchPage from "./pages/SearchPage";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/home" element={<Home />} />
         <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/search" element={<SearchPage />} />
       </Routes>
     </Router>
   );

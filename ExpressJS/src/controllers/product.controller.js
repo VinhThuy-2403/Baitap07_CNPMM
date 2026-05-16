@@ -76,6 +76,29 @@ const getRelatedProducts = async (req, res) => {
   }
 };
 
+const searchProducts = async (req, res) => {
+  try {
+    const {
+      keyword, brand, category,
+      minPrice, maxPrice,
+      isNew, isBestSeller, isSale,
+      sortBy,
+    } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+
+    const result = await productService.searchProducts({
+      keyword, brand, category,
+      minPrice, maxPrice,
+      isNew, isBestSeller, isSale,
+      sortBy, page, limit,
+    });
+    return res.json({ success: true, ...result });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getSaleProducts,
   getNewProducts,
@@ -83,4 +106,5 @@ module.exports = {
   getAllProducts,
   getProductById,
   getRelatedProducts,
+  searchProducts,  
 };

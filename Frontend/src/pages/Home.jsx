@@ -8,7 +8,8 @@ import {
   fetchBestSellerProducts,
 } from "../redux/productSlice";
 import ProductSection from "../components/ProductSection";
-import { Camera, LogOut, User, ChevronLeft, ChevronRight } from "lucide-react";
+// import { Camera, LogOut, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { Camera, LogOut, User, ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 const banners = [
   {
@@ -104,12 +105,22 @@ export default function Home() {
             {categories.map((c) => (
               <button
                 key={c.name}
+                onClick={() => navigate(`/search?category=${c.name}`)}  
                 className="text-gray-300 hover:text-yellow-400 transition-colors"
               >
                 {c.name}
               </button>
             ))}
           </div>
+
+          {/* Search icon */}
+          <button
+            onClick={() => navigate("/search")}
+            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-xl transition-colors"
+          >
+            <Search className="w-4 h-4 text-yellow-400" />
+            <span className="hidden sm:block text-gray-300 text-sm">Tìm kiếm</span>
+          </button>
 
           {/* User */}
           <div className="flex items-center gap-3">
@@ -155,7 +166,10 @@ export default function Home() {
                   <p className="text-gray-300 text-sm md:text-base max-w-xs">
                     {b.subtitle}
                   </p>
-                  <button className="mt-6 bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-6 py-3 rounded-xl transition-colors text-sm">
+                  <button
+                    onClick={() => navigate("/search")}
+                    className="mt-6 bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-6 py-3 rounded-xl transition-colors text-sm"
+                  >
                     Khám phá ngay
                   </button>
                 </div>
@@ -201,6 +215,7 @@ export default function Home() {
           {categories.map((c) => (
             <div
               key={c.name}
+              onClick={() => navigate(`/search?category=${c.name}`)}
               className="bg-gray-800 hover:bg-gray-700 rounded-2xl p-5 text-center cursor-pointer transition-all hover:-translate-y-1 border border-gray-700 hover:border-yellow-400/50"
             >
               <div className="text-3xl mb-2">{c.icon}</div>

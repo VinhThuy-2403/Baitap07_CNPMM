@@ -1,13 +1,13 @@
 const { Product, ProductImage } = require("../models/index");
 const { Op } = require("sequelize");
 
-const getProducts = async ({ where = {}, page = 1, limit = 6 }) => {
+const getProducts = async ({ where = {}, page = 1, limit = 6, order = [["createdAt", "DESC"]] }) => {
   const offset = (page - 1) * limit;
   const { count, rows } = await Product.findAndCountAll({
     where,
     limit,
     offset,
-    order: [["createdAt", "DESC"]],
+    order,
   });
   return {
     data: rows,
@@ -72,6 +72,33 @@ const getRelatedProducts = async ({ category, excludeId, limit = 6 }) => {
   return rows;
 };
 
+const searchProducts = async ({ keyword, brand, category, minPrice, maxPrice, isNew, isBestSeller, isSale, sortBy, page, limit }) => {
+  const where = {};
+  const { Op } = require("sequelize");
+
+  if (keyword) {
+    where.name = { [Op.like]: `%${keyword}%` };
+  }
+  if (brand) where.brand = brand;
+  if (category) where.category = category;
+  if (isNew === "true") where.isNew = true;
+  if (isBestSeller === "true") where.isBestSeller = true;
+  if (isSale === "true") where.isSale = true;
+  if (minPrice || maxPrice) {
+    where.price = {};
+    if (minPrice) where.price[Op.gte] = parseInt(minPrice);
+    if (maxPrice) where.price[Op.lte] = parseInt(maxPrice);
+  }
+
+  let order = [["createdAt", "DESC"]];
+  if (sortBy === "price_asc") order = [["price", "ASC"]];
+  if (sortBy === "price_desc") order = [["price", "DESC"]];
+  if (sortBy === "best_seller") order = [["sold", "DESC"]];
+  if (sortBy === "newest") order = [["createdAt", "DESC"]];
+
+  return getProducts({ where, page, limit, order });
+};
+
 module.exports = {
   getSaleProducts,
   getNewProducts,
@@ -79,4 +106,5 @@ module.exports = {
   getAllProducts,
   getProductById,
   getRelatedProducts,
+  searchProducts
 };
