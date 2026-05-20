@@ -66,4 +66,11 @@ router.put(
   authController.editProfile
 );
 
+
+router.get(
+  "/profile",
+  authMiddleware,
+  authController.getProfile
+);
+
 module.exports = router;
