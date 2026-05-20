@@ -9,14 +9,15 @@ import Home from "./pages/Home";
 import ProductDetail from "./pages/ProductDetail";
 import SearchPage from "./pages/SearchPage";
 import CartPage from "./pages/CartPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import OrdersPage from "./pages/OrdersPage";
+import OrderDetailPage from "./pages/OrderDetailPage";
 import CartDrawer from "./components/CartDrawer";
 
 function App() {
   return (
     <Router>
-      {/* CartDrawer hiển thị trên tất cả trang */}
       <CartDrawer />
-
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
@@ -29,6 +30,9 @@ function App() {
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders/:id" element={<OrderDetailPage />} />
       </Routes>
     </Router>
   );

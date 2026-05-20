@@ -14,7 +14,7 @@ import AllProductsSection from "../components/AllProductsSection";
 import { getTopBestSellerAPI, getTopMostViewedAPI } from "../services/authService";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleCart, fetchCart } from "../redux/cartSlice";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Package } from "lucide-react";
 
 const banners = [
   {
@@ -172,6 +172,14 @@ export default function Home() {
 
 
           {/* User */}
+          <button
+            onClick={() => navigate("/orders")}
+            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-xl transition-colors text-sm"
+          >
+            <Package className="w-4 h-4 text-yellow-400" />
+            <span className="hidden sm:block text-gray-300">Đơn hàng</span>
+          </button>
+
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/edit-profile")}

@@ -116,3 +116,25 @@ export const getProfileAPI = async () => {
   const response = await api.get("/auth/profile");
   return response.data;
 };
+
+// Order APIs
+export const createOrderAPI = async (data) => {
+  const response = await api.post("/orders", data);
+  return response.data;
+};
+
+export const getOrdersAPI = async (page = 1, limit = 10, status = "") => {
+  const query = new URLSearchParams({ page, limit, ...(status && { status }) }).toString();
+  const response = await api.get(`/orders?${query}`);
+  return response.data;
+};
+
+export const getOrderByIdAPI = async (id) => {
+  const response = await api.get(`/orders/${id}`);
+  return response.data;
+};
+
+export const cancelOrderAPI = async (id) => {
+  const response = await api.post(`/orders/${id}/cancel`);
+  return response.data;
+};
