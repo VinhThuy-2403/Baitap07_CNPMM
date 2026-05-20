@@ -210,6 +210,19 @@ const editProfile = async (userId, data) => {
   };
 };
 
+const getProfile = async (userId) => {
+  const user = await User.findByPk(userId, {
+    // Ẩn các trường nhạy cảm không trả về FE
+    attributes: { exclude: ["password", "otpCode", "otpExpires"] } 
+  });
+
+  if (!user) {
+    throw new Error("User không tồn tại");
+  }
+
+  return user;
+};
+
 module.exports = {
   register,
   verifyOtp,
@@ -217,4 +230,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   editProfile,
+  getProfile,
 };

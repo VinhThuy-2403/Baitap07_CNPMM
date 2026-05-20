@@ -110,3 +110,9 @@ export const clearCartAPI = async () => {
   const response = await api.delete("/cart");
   return response.data;
 };
+
+// Thêm API lấy thông tin Profile này vào authService.js
+export const getProfileAPI = async () => {
+  const response = await api.get("/auth/profile");
+  return response.data;
+};

@@ -99,6 +99,25 @@ const editProfile = async (req, res) => {
   }
 };
 
+// Thêm hàm controller này
+const getProfile = async (req, res) => {
+  try {
+    // Lấy id user từ token (đã được authMiddleware gắn vào req.user)
+    const result = await authService.getProfile(req.user.id);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Nhớ xuất (export) nó ra
 module.exports = {
   register,
   verifyOtp,
@@ -106,4 +125,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   editProfile,
+  getProfile, 
 };
