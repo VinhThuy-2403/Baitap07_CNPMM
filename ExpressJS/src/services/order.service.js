@@ -1,4 +1,4 @@
-const { Order, OrderItem, Cart, Product } = require("../models/index");
+const { Order, OrderItem, Cart, Product, User } = require("../models/index");
 const { Op } = require("sequelize");
 
 const STATUS_LABELS = {
@@ -11,9 +11,23 @@ const STATUS_LABELS = {
   cancel_requested: "Yêu cầu hủy đơn",
 };
 
-// Tạo đơn hàng COD
-const createOrder = async (userId, { shippingName, shippingPhone, shippingAddress, note }) => {
-  // Lấy giỏ hàng
+const VALID_COUPONS = {
+  "DISCOUNT10": { percent: 10, minOrderValue: 2000000 },
+  "DISCOUNT15": { percent: 15, minOrderValue: 5000000 },
+  "DISCOUNT20": { percent: 20, minOrderValue: 10000000 },
+};
+
+// Tạo đơn hàng COD có hỗ trợ Mã giảm giá & Điểm thưởng
+const createOrder = async (userId, { shippingName, shippingPhone, shippingAddress, note, discountCode, pointsToUse }) => {
+  // 1. Lấy thông tin user (Để kiểm tra điểm)
+  const user = await User.findByPk(userId);
+  if (!user) {
+    const error = new Error("Không tìm thấy thông tin người dùng");
+    error.status = 404;
+    throw error;
+  }
+
+  // 2. Lấy giỏ hàng
   const cartItems = await Cart.findAll({
     where: { userId },
     include: [{ model: Product, as: "product" }],
@@ -25,7 +39,8 @@ const createOrder = async (userId, { shippingName, shippingPhone, shippingAddres
     throw error;
   }
 
-  // Kiểm tra tồn kho
+  // 3. Kiểm tra tồn kho và Tính tổng tiền gốc
+  let subTotalAmount = 0;
   for (const item of cartItems) {
     if (item.product.stock < item.quantity) {
       const error = new Error(
@@ -34,28 +49,71 @@ const createOrder = async (userId, { shippingName, shippingPhone, shippingAddres
       error.status = 400;
       throw error;
     }
+    const price = item.product.salePrice || item.product.price;
+    subTotalAmount += price * item.quantity;
   }
 
-  // Tính tổng tiền
-  const totalAmount = cartItems.reduce((sum, item) => {
-    const price = item.product.salePrice || item.product.price;
-    return sum + price * item.quantity;
-  }, 0);
+  // 4. --- BẮT ĐẦU TÍNH TOÁN GIẢM GIÁ ---
+  let finalAmount = subTotalAmount;
+  let appliedPercent = 0;
+  let moneyFromPoints = 0;
+  let actualPointsUsed = 0;
 
-  // Tạo đơn hàng
+  // A. Áp dụng Mã giảm giá (Coupon)
+  if (discountCode && VALID_COUPONS[discountCode]) {
+    const coupon = VALID_COUPONS[discountCode];
+    if (subTotalAmount >= coupon.minOrderValue) {
+      appliedPercent = coupon.percent;
+      const discountFromCoupon = (subTotalAmount * appliedPercent) / 100;
+      finalAmount -= discountFromCoupon;
+    } else {
+      const error = new Error(`Mã giảm giá yêu cầu đơn hàng tối thiểu ${coupon.minOrderValue.toLocaleString()}đ`);
+      error.status = 400;
+      throw error;
+    }
+  }
+
+  // B. Áp dụng Điểm tích lũy (Reward Points)
+  if (pointsToUse && pointsToUse > 0) {
+    if (user.points < pointsToUse) {
+      const error = new Error("Bạn không đủ điểm tích lũy");
+      error.status = 400;
+      throw error;
+    }
+    
+    actualPointsUsed = parseInt(pointsToUse);
+    moneyFromPoints = actualPointsUsed * 1000; // 1 điểm = 10,000 VNĐ
+    
+    // Không cho phép trừ điểm làm âm tiền đơn hàng
+    if (moneyFromPoints >= finalAmount) {
+       moneyFromPoints = finalAmount;
+       actualPointsUsed = Math.ceil(moneyFromPoints / 10000); 
+       finalAmount = 0;
+    } else {
+       finalAmount -= moneyFromPoints;
+    }
+  }
+  // --- KẾT THÚC TÍNH TOÁN ---
+
+  // 5. Tạo đơn hàng với các trường giảm giá
   const order = await Order.create({
     userId,
     status: "pending",
     paymentMethod: "cod",
     paymentStatus: "unpaid",
-    totalAmount,
+    totalAmount: subTotalAmount,     // Tổng tiền gốc
+    discountCode: appliedPercent > 0 ? discountCode : null, // Lưu mã giảm
+    discountPercent: appliedPercent, // Phần trăm giảm
+    pointsUsed: actualPointsUsed,    // Số điểm đã dùng
+    pointsDiscount: moneyFromPoints, // Số tiền giảm từ điểm
+    finalAmount: finalAmount,        // Thực trả
     shippingName,
     shippingPhone,
     shippingAddress,
     note: note || null,
   });
 
-  // Tạo order items + trừ stock
+  // 6. Tạo order items + trừ stock
   for (const item of cartItems) {
     const price = item.product.salePrice || item.product.price;
     await OrderItem.create({
@@ -74,10 +132,15 @@ const createOrder = async (userId, { shippingName, shippingPhone, shippingAddres
     });
   }
 
-  // Xóa giỏ hàng
+  // 7. Trừ điểm của User (nếu có sử dụng)
+  if (actualPointsUsed > 0) {
+    await user.update({ points: user.points - actualPointsUsed });
+  }
+
+  // 8. Xóa giỏ hàng
   await Cart.destroy({ where: { userId } });
 
-  // Tự động xác nhận sau 5 phút
+  // 9. Tự động xác nhận sau 5 phút
   setTimeout(async () => {
     try {
       const freshOrder = await Order.findByPk(order.id);
@@ -168,7 +231,7 @@ const cancelOrder = async (userId, orderId) => {
   const now = new Date();
   const diffMinutes = (now - createdAt) / 1000 / 60;
 
-  if (diffMinutes > 5) {
+  if (diffMinutes > 30) {
     const error = new Error("Chỉ được hủy đơn trong vòng 30 phút sau khi đặt");
     error.status = 400;
     throw error;
@@ -184,6 +247,14 @@ const cancelOrder = async (userId, orderId) => {
         sold: Math.max(0, product.sold - item.quantity),
       });
     }
+  }
+
+  // Hoàn lại điểm tích lũy nếu đơn hàng đã xài điểm
+  if (order.pointsUsed > 0) {
+      const user = await User.findByPk(userId);
+      if(user) {
+          await user.update({ points: user.points + order.pointsUsed });
+      }
   }
 
   await order.update({ status: "cancelled" });

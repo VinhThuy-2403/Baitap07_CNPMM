@@ -189,6 +189,7 @@ const editProfile = async (userId, data) => {
     "phone",
     "address",
     "avatar",
+    "points",
   ];
 
   allowedFields.forEach((field) => {
@@ -207,6 +208,7 @@ const editProfile = async (userId, data) => {
     address: user.address,
     avatar: user.avatar,
     role: user.role,
+    points: user.points,
   };
 };
 
