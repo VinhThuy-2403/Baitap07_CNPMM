@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, openCart } from "../redux/cartSlice";
+import { fetchReviews, addReview, clearReviewStatus } from "../redux/reviewSlice";
 
 const formatPrice = (price) =>
   new Intl.NumberFormat("vi-VN", {
@@ -31,35 +32,27 @@ const formatPrice = (price) =>
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
+  // --- LOCAL STATES CHO SẢN PHẨM ---
   const [product, setProduct] = useState(null);
   const [related, setRelated] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
-
-
-  const dispatch = useDispatch();
-  const { isLoading: cartLoading, error: cartError } = useSelector((state) => state.cart);
-  const { token } = useSelector((state) => state.auth);
   const [cartMsg, setCartMsg] = useState("");
 
-  const handleAddToCart = async () => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    setCartMsg("");
-    const result = await dispatch(addToCart({ productId: product.id, quantity }));
-    if (addToCart.fulfilled.match(result)) {
-      setCartMsg("Đã thêm vào giỏ hàng!");
-      dispatch(openCart());
-      setTimeout(() => setCartMsg(""), 3000);
-    } else {
-      setCartMsg(result.payload || "Thêm vào giỏ thất bại");
-    }
-  };
+  // --- REDUX STATES: AUTH & CART ---
+  const { isLoading: cartLoading } = useSelector((state) => state.cart);
+  const { token } = useSelector((state) => state.auth);
 
+  // --- REDUX STATES: REVIEWS ---
+  const { items: reviews, isLoading: reviewLoading, error: reviewError, successMessage } = useSelector((state) => state.review);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [uiError, setUiError] = useState("");
+
+  // --- LẤY DỮ LIỆU SẢN PHẨM & BÌNH LUẬN ---
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -79,14 +72,62 @@ export default function ProductDetail() {
         setIsLoading(false);
       }
     };
+    
     fetchData();
-  }, [id]);
 
-  // const handleAddToCart = () => {
-  //   setAdded(true);
-  //   setTimeout(() => setAdded(false), 2000);
-  // };
+    // Lấy danh sách bình luận
+    if (id) {
+      dispatch(fetchReviews(id));
+    }
+    
+    // Clear dữ liệu đánh giá khi rời trang
+    return () => {
+      dispatch(clearReviewStatus());
+    };
+  }, [id, dispatch]);
 
+  // --- XỬ LÝ THÔNG BÁO BÌNH LUẬN ---
+  useEffect(() => {
+    if (successMessage) {
+      setComment("");
+      setRating(5);
+      setUiError("");
+      alert(successMessage);
+      dispatch(clearReviewStatus());
+    }
+    if (reviewError) {
+      setUiError(reviewError);
+      dispatch(clearReviewStatus());
+    }
+  }, [successMessage, reviewError, dispatch]);
+
+  // --- XỬ LÝ SỰ KIỆN NÚT BẤM ---
+  const handleAddToCart = async () => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    setCartMsg("");
+    const result = await dispatch(addToCart({ productId: product.id, quantity }));
+    if (addToCart.fulfilled.match(result)) {
+      setCartMsg("Đã thêm vào giỏ hàng!");
+      dispatch(openCart());
+      setTimeout(() => setCartMsg(""), 3000);
+    } else {
+      setCartMsg(result.payload || "Thêm vào giỏ thất bại");
+    }
+  };
+
+  const handleSubmitReview = (e) => {
+    e.preventDefault();
+    if (!token) {
+      setUiError("Vui lòng đăng nhập tài khoản để thực hiện đánh giá.");
+      return;
+    }
+    dispatch(addReview({ productId: id, rating, comment }));
+  };
+
+  // --- RENDER LOADING & ERROR ---
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -114,8 +155,7 @@ export default function ProductDetail() {
     );
   }
 
-  const images =
-    product.images && product.images.length > 0
+  const images = product.images && product.images.length > 0
       ? product.images.map((img) => img.url)
       : [product.image];
 
@@ -123,8 +163,7 @@ export default function ProductDetail() {
     ? Math.round(((product.price - product.salePrice) / product.price) * 100)
     : null;
 
-  const stockStatus =
-    product.stock === 0
+  const stockStatus = product.stock === 0
       ? { label: "Hết hàng", color: "text-red-400" }
       : product.stock < 5
       ? { label: `Còn ${product.stock} sản phẩm`, color: "text-orange-400" }
@@ -132,7 +171,6 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-
       {/* NAVBAR */}
       <nav className="bg-black/90 backdrop-blur-md sticky top-0 z-50 border-b border-yellow-500/20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
@@ -155,7 +193,6 @@ export default function ProductDetail() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-
         {/* BREADCRUMB */}
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
           <button onClick={() => navigate("/home")} className="hover:text-yellow-400">
@@ -169,10 +206,8 @@ export default function ProductDetail() {
 
         {/* MAIN CONTENT */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-
           {/* ẢNH - SWIPER */}
           <div key={id}>
-            {/* Main swiper */}
             <Swiper
               modules={[Navigation, Pagination, Thumbs]}
               navigation
@@ -195,7 +230,6 @@ export default function ProductDetail() {
               ))}
             </Swiper>
 
-            {/* Thumbnail swiper */}
             {images.length > 1 && (
               <Swiper
                 modules={[Thumbs]}
@@ -220,7 +254,6 @@ export default function ProductDetail() {
 
           {/* THÔNG TIN SẢN PHẨM */}
           <div className="flex flex-col gap-5">
-
             {/* Badges */}
             <div className="flex flex-wrap gap-2">
               <span className="bg-gray-700 text-gray-300 text-xs px-3 py-1 rounded-full flex items-center gap-1">
@@ -262,7 +295,9 @@ export default function ProductDetail() {
                   />
                 ))}
               </div>
-              <span className="text-gray-400 text-sm">(4.8/5)</span>
+              <span className="text-gray-400 text-sm">
+                ({reviews?.length || 0} đánh giá)
+              </span>
             </div>
 
             {/* Giá */}
@@ -297,8 +332,7 @@ export default function ProductDetail() {
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-gray-400" />
                 <span className="text-sm text-gray-400">
-                  Đã bán:{" "}
-                  <span className="text-white font-medium">{product.sold}</span>
+                  Đã bán: <span className="text-white font-medium">{product.sold}</span>
                 </span>
               </div>
             </div>
@@ -368,7 +402,102 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* SẢN PHẨM TƯƠNG TỰ */}
+        {/* --- KHU VỰC BÌNH LUẬN & ĐÁNH GIÁ SẢN PHẨM --- */}
+        <div className="mt-16 border-t border-gray-700 pt-10">
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+            <span className="w-1 h-7 bg-yellow-400 rounded-full inline-block" />
+            Đánh giá từ khách hàng
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            {/* CỘT TRÁI: FORM ĐÁNH GIÁ */}
+            <div className="lg:col-span-1 bg-gray-800 p-6 rounded-2xl h-fit border border-gray-700">
+              <h3 className="font-semibold text-lg text-white mb-2">Viết nhận xét của bạn</h3>
+              <p className="text-xs text-yellow-400 mb-4 font-medium">
+                🎁 Nhận ngay 50 điểm tích lũy vào tài khoản sau khi gửi đánh giá thành công!
+              </p>
+
+              {uiError && (
+                <div className="p-3 mb-4 bg-red-500/10 text-red-400 text-sm rounded-xl font-medium border border-red-500/20">
+                  {uiError}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmitReview} className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Số sao đánh giá:</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => setRating(num)}
+                        className={`w-10 h-10 font-bold rounded-xl transition-all text-sm ${
+                          rating >= num
+                            ? "bg-yellow-400 text-black shadow-sm"
+                            : "bg-gray-700 text-gray-400 hover:bg-gray-600"
+                        }`}
+                      >
+                        {num} ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Nội dung bình luận:</label>
+                  <textarea
+                    rows="4"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Chia sẻ trải nghiệm thực tế về sản phẩm này..."
+                    className="w-full px-4 py-3 border border-gray-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-gray-700 text-white placeholder-gray-400"
+                    required
+                  ></textarea>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={reviewLoading}
+                  className="w-full py-3 bg-yellow-400 text-black hover:bg-yellow-500 font-bold text-sm rounded-xl transition-colors disabled:bg-gray-600 disabled:text-gray-400"
+                >
+                  {reviewLoading ? "Đang gửi đi..." : "Gửi đánh giá"}
+                </button>
+              </form>
+            </div>
+
+            {/* CỘT PHẢI: DANH SÁCH BÌNH LUẬN */}
+            <div className="lg:col-span-2 flex flex-col gap-4">
+              {reviews?.length === 0 ? (
+                <div className="text-center py-10 bg-gray-800 border border-gray-700 rounded-2xl text-gray-400 text-sm font-medium">
+                  Chưa có lượt bình luận nào cho sản phẩm này. Hãy là người đầu tiên!
+                </div>
+              ) : (
+                reviews?.map((rev) => (
+                  <div key={rev.id} className="p-5 border border-gray-700 rounded-2xl bg-gray-800 flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-sm text-white">
+                        {rev.user?.name || "Khách hàng ẩn danh"}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(rev.createdAt).toLocaleDateString("vi-VN")}
+                      </span>
+                    </div>
+                    <div className="flex text-yellow-400 tracking-tighter text-sm">
+                      {"★".repeat(rev.rating)}
+                      <span className="text-gray-600">{"★".repeat(5 - rev.rating)}</span>
+                    </div>
+                    <p className="text-sm text-gray-300 leading-relaxed mt-1">
+                      {rev.comment}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* --- SẢN PHẨM TƯƠNG TỰ --- */}
         {related.length > 0 && (
           <div className="mt-16">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">

@@ -60,6 +60,13 @@ const User = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
+
+    
+    points: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
+    },
   },
   {
     tableName: "users",
