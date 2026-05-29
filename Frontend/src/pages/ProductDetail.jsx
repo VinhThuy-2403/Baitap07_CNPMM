@@ -37,6 +37,7 @@ export default function ProductDetail() {
   // --- LOCAL STATES CHO SẢN PHẨM ---
   const [product, setProduct] = useState(null);
   const [related, setRelated] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]); // State mới cho "Sản phẩm đã xem"
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
@@ -64,8 +65,31 @@ export default function ProductDetail() {
           getProductByIdAPI(id),
           getRelatedProductsAPI(id),
         ]);
-        setProduct(productRes.data);
+        
+        const currentProduct = productRes.data;
+        setProduct(currentProduct);
         setRelated(relatedRes.data);
+
+        // --- BẮT ĐẦU: LOGIC LƯU SẢN PHẨM ĐÃ XEM ---
+        const viewedItemsJSON = localStorage.getItem("recentlyViewed");
+        let viewedItems = viewedItemsJSON ? JSON.parse(viewedItemsJSON) : [];
+        
+        // Loại bỏ sản phẩm hiện tại nếu nó đã có trong lịch sử (để tránh trùng lặp)
+        viewedItems = viewedItems.filter(item => item.id !== currentProduct.id);
+        
+        // Đẩy sản phẩm này lên đầu danh sách
+        viewedItems.unshift(currentProduct);
+        
+        // Giới hạn chỉ lưu tối đa 15 sản phẩm gần nhất
+        if (viewedItems.length > 15) viewedItems.pop();
+        
+        // Lưu lại vào trình duyệt
+        localStorage.setItem("recentlyViewed", JSON.stringify(viewedItems));
+        
+        // Cập nhật State để hiển thị danh sách (nhưng loại trừ sản phẩm đang xem ra khỏi danh sách hiển thị)
+        setRecentlyViewed(viewedItems.filter(item => item.id !== currentProduct.id));
+        // --- KẾT THÚC LOGIC ---
+
       } catch (error) {
         console.error(error);
       } finally {
@@ -285,7 +309,7 @@ export default function ProductDetail() {
               {product.name}
             </h1>
 
-            {/* Đánh giá */}
+            {/* Đánh giá - Đã sửa lấy từ product.reviewsCount */}
             <div className="flex items-center gap-2">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
@@ -296,7 +320,7 @@ export default function ProductDetail() {
                 ))}
               </div>
               <span className="text-gray-400 text-sm">
-                ({reviews?.length || 0} đánh giá)
+                ({product.reviewsCount || reviews?.length || 0} đánh giá)
               </span>
             </div>
 
@@ -332,7 +356,7 @@ export default function ProductDetail() {
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-gray-400" />
                 <span className="text-sm text-gray-400">
-                  Đã bán: <span className="text-white font-medium">{product.sold}</span>
+                  Đã bán: <span className="text-white font-medium">{product.sold || 0}</span>
                 </span>
               </div>
             </div>
@@ -511,6 +535,22 @@ export default function ProductDetail() {
             </div>
           </div>
         )}
+
+        {/* --- SẢN PHẨM ĐÃ XEM --- */}
+        {recentlyViewed.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+              <span className="w-1 h-7 bg-gray-500 rounded-full inline-block" />
+              Sản phẩm bạn vừa xem
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {recentlyViewed.slice(0, 6).map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

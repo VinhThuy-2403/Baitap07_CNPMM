@@ -7,8 +7,7 @@ import {
   fetchBestSellerProducts,
 } from "../redux/productSlice";
 import ProductSection from "../components/ProductSection";
-// import { Camera, LogOut, User, ChevronLeft, ChevronRight } from "lucide-react";
-import { Camera, LogOut, User, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Camera, LogOut, User, ChevronLeft, ChevronRight, Search, Heart } from "lucide-react";
 import TopProductsCarousel from "../components/TopProductsCarousel";
 import AllProductsSection from "../components/AllProductsSection";
 import { getTopBestSellerAPI, getTopMostViewedAPI } from "../services/authService";
@@ -55,7 +54,7 @@ const brands = ["Canon", "Sony", "Nikon", "Fujifilm"];
 export default function Home() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, token } = useSelector((state) => state.auth);
+  const { token } = useSelector((state) => state.auth);
   const { sale, newProducts, bestSeller } = useSelector((state) => state.product);
 
   const [banner, setBanner] = useState(0);
@@ -68,6 +67,7 @@ export default function Home() {
   const [topLoading, setTopLoading] = useState(true);
 
   const { count } = useSelector((state) => state.cart);
+  const wishlistItems = useSelector((state) => state.wishlist?.items || []);
 
   useEffect(() => {
     if (token) dispatch(fetchCart());
@@ -125,7 +125,7 @@ export default function Home() {
       <nav className="bg-black/90 backdrop-blur-md sticky top-0 z-50 border-b border-yellow-500/20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/home")}>
             <div className="bg-yellow-400 p-2 rounded-xl">
               <Camera className="w-5 h-5 text-black" />
             </div>
@@ -147,55 +147,69 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Search icon */}
-          <button
-            onClick={() => navigate("/search")}
-            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-xl transition-colors"
-          >
-            <Search className="w-4 h-4 text-yellow-400" />
-            <span className="hidden sm:block text-gray-300 text-sm">Tìm kiếm</span>
-          </button>
-
-          {/* Cart icon */}
-          <button
-            onClick={() => dispatch(toggleCart())}
-            className="relative flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-xl transition-colors"
-          >
-            <ShoppingCart className="w-4 h-4 text-yellow-400" />
-            <span className="hidden sm:block text-gray-300 text-sm">Giỏ hàng</span>
-            {count > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                {count > 9 ? "9+" : count}
-              </span>
-            )}
-          </button>
-
-
-          {/* User */}
-          <button
-            onClick={() => navigate("/orders")}
-            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-xl transition-colors text-sm"
-          >
-            <Package className="w-4 h-4 text-yellow-400" />
-            <span className="hidden sm:block text-gray-300">Đơn hàng</span>
-          </button>
-
           <div className="flex items-center gap-3">
+            {/* Search icon */}
+            <button
+              onClick={() => navigate("/search")}
+              className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2.5 rounded-xl transition-colors"
+              title="Tìm kiếm"
+            >
+              <Search className="w-4 h-4 text-yellow-400" />
+            </button>
+
+            {/* Orders icon */}
+            <button
+              onClick={() => navigate("/orders")}
+              className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2.5 rounded-xl transition-colors"
+              title="Đơn hàng"
+            >
+              <Package className="w-4 h-4 text-yellow-400" />
+            </button>
+
+            {/* Wishlist icon */}
+            <button
+              onClick={() => navigate("/wishlist")}
+              className="relative flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2.5 rounded-xl transition-colors"
+              title="Sản phẩm yêu thích"
+            >
+              <Heart className="w-4 h-4 text-yellow-400" />
+              {wishlistItems.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {wishlistItems.length > 9 ? "9+" : wishlistItems.length}
+                </span>
+              )}
+            </button>
+
+            {/* Cart icon */}
+            <button
+              onClick={() => dispatch(toggleCart())}
+              className="relative flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2.5 rounded-xl transition-colors"
+              title="Giỏ hàng"
+            >
+              <ShoppingCart className="w-4 h-4 text-yellow-400" />
+              {count > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {count > 9 ? "9+" : count}
+                </span>
+              )}
+            </button>
+
+            {/* User (Icon only) */}
             <button
               onClick={() => navigate("/edit-profile")}
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-xl transition-colors text-sm"
+              className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2.5 rounded-xl transition-colors"
+              title="Tài khoản"
             >
               <User className="w-4 h-4 text-yellow-400" />
-              <span className="hidden sm:block text-gray-300">
-                {user?.name || "Tài khoản"}
-              </span>
             </button>
+
+            {/* Logout */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1 bg-red-600/20 hover:bg-red-600/40 text-red-400 px-3 py-2 rounded-xl transition-colors text-sm"
+              className="flex items-center justify-center bg-red-600/20 hover:bg-red-600/40 p-2.5 rounded-xl transition-colors"
+              title="Đăng xuất"
             >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:block">Đăng xuất</span>
+              <LogOut className="w-4 h-4 text-red-400" />
             </button>
           </div>
         </div>

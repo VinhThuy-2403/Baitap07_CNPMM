@@ -1,5 +1,6 @@
-const { Product, ProductImage } = require("../models/index");
+const { Product, ProductImage, Review, OrderItem, Order } = require("../models/index");
 const { Op } = require("sequelize");
+const sequelize = require("../config/db"); 
 
 const getProducts = async ({
   where = {},
@@ -44,7 +45,7 @@ const getAllProducts = async ({ page, limit, brand, category }) => {
   return getProducts({ where, page, limit });
 };
 
-// Lấy chi tiết 1 sản phẩm kèm ảnh — KHÔNG tăng views
+// Lấy chi tiết 1 sản phẩm kèm ảnh, đếm bình luận và lượt mua
 const getProductById = async (id) => {
   const product = await Product.findByPk(id, {
     include: [
@@ -56,16 +57,49 @@ const getProductById = async (id) => {
       },
     ],
   });
+  
   if (!product) {
     const error = new Error("Sản phẩm không tồn tại");
     error.status = 404;
     throw error;
   }
-  return product;
+
+  // 1. Đếm số lượng bình luận
+  const reviewsCount = await Review.count({
+    where: { productId: id }
+  });
+
+  // 2. Tính số lượng đã bán thực tế dựa trên các đơn hàng đã "delivered" (đã giao)
+  const soldData = await OrderItem.findAll({
+    where: { productId: id },
+    include: [{
+      model: Order,
+      as: "order",
+      where: { status: 'delivered' }, // Bạn có thể đổi thành 'confirmed' tùy logic của bạn
+      attributes: []
+    }],
+    attributes: [
+      [sequelize.fn('sum', sequelize.col('quantity')), 'totalSold']
+    ],
+    raw: true
+  });
+
+  // Cập nhật lại cột sold trong database nếu có sự chênh lệch
+  const actualSold = soldData[0].totalSold ? parseInt(soldData[0].totalSold) : 0;
+  if(actualSold !== product.sold) {
+      await product.update({ sold: actualSold });
+  }
+
+  // Chuyển đổi thành JSON và gắn thêm reviewsCount
+  const result = product.toJSON();
+  result.reviewsCount = reviewsCount;
+  result.sold = actualSold;
+
+  return result;
 };
 
 // Tăng views riêng — chỉ gọi từ controller getProductById
-  const incrementViews = async (id) => {
+const incrementViews = async (id) => {
   await Product.increment("views", { by: 1, where: { id } });
 };
 

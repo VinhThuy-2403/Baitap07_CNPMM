@@ -13,6 +13,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import CartDrawer from "./components/CartDrawer";
+import WishlistPage from "./pages/WishlistPage"; // NHỚ IMPORT Ở ĐÂY
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/orders/:id" element={<OrderDetailPage />} />
+        <Route path="/wishlist" element={<WishlistPage />} /> 
       </Routes>
     </Router>
   );
