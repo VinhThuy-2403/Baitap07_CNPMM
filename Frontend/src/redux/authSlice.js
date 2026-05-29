@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { loginAPI, registerAPI, verifyOtpAPI } from "../services/authService";
+import { loginAPI, registerAPI, verifyOtpAPI, getProfileAPI } from "../services/authService";
 
 export const loginUser = createAsyncThunk(
   "auth/login",
@@ -11,6 +11,20 @@ export const loginUser = createAsyncThunk(
     } catch (error) {
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || "Dang nhap that bai"
+      );
+    }
+  }
+);
+
+export const fetchProfile = createAsyncThunk(
+  "auth/fetchProfile",
+  async (_, thunkAPI) => {
+    try {
+      const data = await getProfileAPI();
+      return data.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Khong the lay thong tin user"
       );
     }
   }
@@ -76,7 +90,9 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.token = action.payload.token;
-        state.user = { role: action.payload.role };
+        state.user = { 
+          role: action.payload.role,
+        };
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -103,6 +119,19 @@ const authSlice = createSlice({
         state.isLoading = false;
       })
       .addCase(verifyOtpUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Fetch Profile
+      .addCase(fetchProfile.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+      })
+      .addCase(fetchProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

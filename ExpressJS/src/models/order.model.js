@@ -61,6 +61,12 @@ const Order = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    // Thêm các cột này vào model Order
+    discountCode: { type: DataTypes.STRING, allowNull: true },
+    discountPercent: { type: DataTypes.INTEGER, defaultValue: 0 },
+    pointsUsed: { type: DataTypes.INTEGER, defaultValue: 0 },
+    pointsDiscount: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 }, 
+    finalAmount: { type: DataTypes.DECIMAL(10, 2), allowNull: false }, 
   },
   {
     tableName: "orders",
